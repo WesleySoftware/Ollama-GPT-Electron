@@ -13,10 +13,10 @@ jobs:
         os: [windows-latest, macos-latest, ubuntu-latest]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Use Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: 20.14.0
 
@@ -28,9 +28,24 @@ jobs:
 
     - name: Package Application
       run: npm run package
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
+      
+    - name: Upload Artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.os }}
-        path: dist/*.exe
+        name: windows-build
+        path: out/make/squirrel.windows/x64/*.exe
+
+    - name: Upload Artifacts (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-build
+        path: out/make/*.dmg
+
+    - name: Upload Artifacts (Ubuntu Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-build
+        path: out/make/*.AppImage
