@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        .center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .conversation-pane,
+        textarea {
+            overflow: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #000;
+            resize: vertical;
+        }
+
+        .conversation-pane {
+            background-color: #f0f0f0;
+            width: 90vw;
+            height: 70vh;
+        }
+
+        textarea {
+            width: 80vw;
+            height: 20vh;
+            background-color: #fff;
+        }
+
+        .user-input-zone {
+            display: flex;
+            align-items: start;
+            justify-content: center;
+        }
+
+        .button-zone {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-message {
+            margin: 5px;
+            padding: 5px;
+            margin-left: auto;
+            border: 1px solid #000;
+            background-color: #f0f0f0;
+            text-align: right;
+            width: 80%;
+            word-wrap: break-word;
+        }
+
+        .ai-message {
+            margin: 5px;
+            padding: 5px;
+            margin-right: auto;
+            border: 1px solid #000;
+            background-color: #f0f0f0;
+            text-align: left;
+            width: 80%;
+            word-wrap: break-word;
+        }
+
+
+        button {
+            margin: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="center">
+        <div class="conversation-pane">
+            Please enter some text to chat with the llama.
+        </div>
+        <div class="user-input-zone">
+            <textarea id="user-entry" placeholder="Enter text here"></textarea>
+            <div class="'button-zone">
+            <button id="send-message-button">Send Message</button>
+            <button id="clear-chat-button">Clear</button>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+<script>
+    const scrollingText = document.querySelector('.conversation-pane');
+    const textarea = document.getElementById('user-entry');
+    const sendMessageButton = document.getElementById('send-message-button');
+    const clearChatButton = document.getElementById('clear-chat-button');
+    let ollama_port = '11434';
+    let kept_context = [];
+    const addAIMessage = async (message) => {
+        console.log('Using context:', kept_context);
+        const response = await fetch('http://localhost:' + ollama_port + '/api/generate', {
+
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt: message, model: 'llama3', context: kept_context,})
+        });
+
+        if (!response.ok) {
+            console.error('Error:', response.status, response.statusText);
+            return;
+        }
+
+        let reader = response.body.getReader();
+        let chunks = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            chunks += new TextDecoder('utf-8').decode(value);
+        }
+        console.log('Received message:', chunks);
+        let responses = chunks.split('\n').filter(Boolean).map(JSON.parse);
+        kept_context = responses[responses.length - 1].context;
+        let fullResponse = responses.map(r => r.response).join('');
+        let newText = document.createElement('div');
+        newText.classList.add('ai-message');
+        newText.innerHTML = fullResponse;
+        scrollingText.appendChild(newText);
+    }
+
+    sendMessageButton.addEventListener('mousedown', async () => {
+        if (!textarea.value) {
+            return;
+        }
+        let newText = document.createElement('div');
+        newText.classList.add('user-message');
+        let message = textarea.value;
+        newText.innerHTML = message;
+        scrollingText.appendChild(newText);
+        textarea.value = '';
+        console.log('Sending message:', message);
+        await addAIMessage(message);
+    });
+
+    clearChatButton.addEventListener('mousedown', () => {
+        scrollingText.innerHTML = '';
+        context = [];
+    });
+
+
+
+</script>
+
+</html>
