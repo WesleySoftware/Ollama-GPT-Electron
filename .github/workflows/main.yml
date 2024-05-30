@@ -43,9 +43,17 @@ jobs:
         name: macos-build
         path: out/make/*.dmg
 
-    - name: Upload Artifacts (Ubuntu Linux)
+    - name: Upload Artifacts (Deb)
       if: matrix.os == 'ubuntu-latest'
       uses: actions/upload-artifact@v4
       with:
         name: linux-build
-        path: out/make/*.AppImage
+        path: out/make/*.deb
+        
+    - name: Upload Artifacts (RPM)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-build
+        path: out/make/*.rpm
+        
